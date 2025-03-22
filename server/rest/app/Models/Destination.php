@@ -19,7 +19,7 @@ class Destination extends Model
         'description',
         'price',
         'duration',
-        'image',
+        'image',  // Changé de 'image' à 'image_url'
     ];
 
     /**

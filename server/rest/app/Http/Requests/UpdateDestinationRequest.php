@@ -1,8 +1,7 @@
 <?php
-
 namespace App\Http\Requests;
-
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class UpdateDestinationRequest extends FormRequest
 {
@@ -11,8 +10,8 @@ class UpdateDestinationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Only admin users can update destinations
-        return auth()->check() && auth()->user()->is_admin;
+        return Auth::check() && Auth::user()->is_admin;
+
     }
 
     /**
@@ -27,7 +26,7 @@ class UpdateDestinationRequest extends FormRequest
             'description' => 'sometimes|required|string',
             'price' => 'sometimes|required|numeric|min:0',
             'duration' => 'sometimes|required|integer|min:1',
-            'image' => 'sometimes|required|string|max:255',
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
 }
