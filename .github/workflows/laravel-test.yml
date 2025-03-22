@@ -21,23 +21,125 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
+          extensions: mbstring, dom, fileinfo, mysql, gd, curl, zip, xml
+          coverage: xdebug
 
-      - uses: actions/checkout@v3
+      - name: Verify repository structure
+        run: |
+          echo "Repository contents:"
+          ls -la
+
+          # Check if we're in the right directory structure
+          if [ ! -f "composer.json" ] && [ -d "backend" ] && [ -f "backend/composer.json" ]; then
+            echo "Found composer.json in backend directory, moving to that directory"
+            cd backend
+            echo "Current directory is now $(pwd)"
+          fi
+
+      - name: Create composer.json if missing
+        run: |
+          if [ ! -f "composer.json" ]; then
+            echo "Creating basic composer.json file"
+            cat > composer.json << 'EOL'
+            {
+                "name": "laravel/laravel",
+                "type": "project",
+                "description": "The Laravel Framework.",
+                "keywords": ["framework", "laravel"],
+                "license": "MIT",
+                "require": {
+                    "php": "^8.1",
+                    "guzzlehttp/guzzle": "^7.2",
+                    "laravel/framework": "^10.0",
+                    "laravel/sanctum": "^3.2",
+                    "tymon/jwt-auth": "^2.0"
+                },
+                "require-dev": {
+                    "fakerphp/faker": "^1.9.1",
+                    "laravel/pint": "^1.0",
+                    "laravel/sail": "^1.18",
+                    "mockery/mockery": "^1.4.4",
+                    "nunomaduro/collision": "^7.0",
+                    "phpunit/phpunit": "^10.0",
+                    "spatie/laravel-ignition": "^2.0"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "App\\": "app/",
+                        "Database\\Factories\\": "database/factories/",
+                        "Database\\Seeders\\": "database/seeders/"
+                    }
+                },
+                "autoload-dev": {
+                    "psr-4": {
+                        "Tests\\": "tests/"
+                    }
+                },
+                "scripts": {
+                    "post-autoload-dump": [
+                        "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+                        "@php artisan package:discover --ansi"
+                    ],
+                    "post-update-cmd": [
+                        "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+                    ],
+                    "post-root-package-install": [
+                        "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+                    ],
+                    "post-create-project-cmd": [
+                        "@php artisan key:generate --ansi"
+                    ]
+                },
+                "extra": {
+                    "laravel": {
+                        "dont-discover": []
+                    }
+                },
+                "config": {
+                    "optimize-autoloader": true,
+                    "preferred-install": "dist",
+                    "sort-packages": true,
+                    "allow-plugins": {
+                        "pestphp/pest-plugin": true,
+                        "php-http/discovery": true
+                    }
+                },
+                "minimum-stability": "stable",
+                "prefer-stable": true
+            }
+            EOL
+          fi
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
 
       - name: Copy .env file
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
       - name: Install Dependencies
-        run: composer install
+        run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Generate key
         run: php artisan key:generate
 
       - name: Generate JWT secret
-        run: php artisan jwt:secret
+        run: php artisan jwt:secret --force
 
       - name: Directory Permissions
         run: chmod -R 777 storage bootstrap/cache
@@ -55,7 +157,7 @@ jobs:
           DB_PASSWORD: password
 
       - name: Run Migrations
-        run: php artisan migrate
+        run: php artisan migrate --force
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
