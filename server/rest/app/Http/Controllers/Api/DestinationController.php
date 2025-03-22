@@ -28,12 +28,14 @@ class DestinationController extends Controller
             $query->where('name', 'like', '%' . $request->name . '%');
         }
 
-        $destinations = $query->get();
+        // Get destinations and convert to array
+        $destinations = $query->get()->toArray();
 
         return response()->json([
             'data' => $destinations
         ]);
     }
+
 
     /**
      * Store a newly created destination in storage.

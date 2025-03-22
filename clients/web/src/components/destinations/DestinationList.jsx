@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import DestinationCard from "./DestinationCard";
 import { getDestinations } from "../../services/destinationService";
 
-// Component for displaying a list of destinations
 const DestinationList = () => {
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +31,31 @@ const DestinationList = () => {
     fetchDestinations({ name: searchTerm });
   };
 
+  const handleExportCSV = () => {
+    const headers = ["name", "description", "price", "duration", "image"];
+    const rows = destinations.map((destination) => [
+      destination.name,
+      destination.description,
+      destination.price,
+      destination.duration,
+      destination.image,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const timestamp = new Date().toISOString().replace(/[:.-]/g, "_");
+    link.download = `destinations_${timestamp}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading destinations...</div>;
   }
@@ -58,6 +82,15 @@ const DestinationList = () => {
             Search
           </button>
         </form>
+      </div>
+
+      <div className="mb-6">
+        <button
+          onClick={handleExportCSV}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Export to CSV
+        </button>
       </div>
 
       {destinations.length === 0 ? (

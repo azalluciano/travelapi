@@ -1,11 +1,19 @@
 import React, { useState, useRef } from "react";
 
-// Component for creating or updating destinations with image upload
+/**
+ * DestinationForm Component
+ * A responsive form for creating or updating travel destinations with image upload capability.
+ *
+ * @param {Object} initialData - Pre-filled data for editing mode
+ * @param {Function} onSubmit - Handler for form submission
+ * @param {String} buttonText - Custom text for the submit button
+ */
 const DestinationForm = ({
   initialData = {},
   onSubmit,
   buttonText = "Save",
 }) => {
+  // Form state management
   const [formData, setFormData] = useState({
     name: initialData.name || "",
     description: initialData.description || "",
@@ -13,12 +21,15 @@ const DestinationForm = ({
     duration: initialData.duration || "",
   });
 
-  // Store the actual image file separately
+  // Image handling states
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(initialData.image || "");
   const [errors, setErrors] = useState({});
   const fileInputRef = useRef(null);
 
+  /**
+   * Updates form data when input fields change
+   */
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -34,6 +45,9 @@ const DestinationForm = ({
     }
   };
 
+  /**
+   * Handles image file selection and preview
+   */
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -53,6 +67,10 @@ const DestinationForm = ({
     }
   };
 
+  /**
+   * Validates form inputs before submission
+   * @returns {Boolean} - Whether the form is valid
+   */
   const validate = () => {
     const newErrors = {};
 
@@ -85,8 +103,10 @@ const DestinationForm = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Handles form submission
+   */
   const handleSubmit = async (e) => {
-    console.log("aazazaza", formData);
     e.preventDefault();
 
     if (validate()) {
@@ -102,25 +122,32 @@ const DestinationForm = ({
       // Add image file if a new one was selected
       if (imageFile) {
         formDataToSubmit.append("image", imageFile);
-      } else if (initialData.image) {
       }
 
       // Call the onSubmit function with the FormData object
-      console.log("aazazaza", formData);
-      console.log("zzzzzzzzzzzzzzz", formDataToSubmit);
       onSubmit(formDataToSubmit);
     }
   };
 
+  // Input field style classes
+  const inputClass = (fieldName) => `
+    w-full p-3 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400
+    ${errors[fieldName] ? "border-red-500" : "border-gray-300"}
+  `;
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4"
+      className="space-y-6 max-w-2xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow-md"
       encType="multipart/form-data"
     >
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        {initialData.name ? "Edit Destination" : "Add New Destination"}
+      </h2>
+
       <div>
-        <label htmlFor="name" className="block text-gray-700 mb-1">
-          Name
+        <label htmlFor="name" className="block text-gray-700 font-medium mb-2">
+          Destination Name
         </label>
         <input
           type="text"
@@ -128,9 +155,8 @@ const DestinationForm = ({
           name="name"
           value={formData.name}
           onChange={handleChange}
-          className={`w-full p-2 border rounded ${
-            errors.name ? "border-red-500" : "border-gray-300"
-          }`}
+          placeholder="Enter destination name"
+          className={inputClass("name")}
         />
         {errors.name && (
           <p className="text-red-500 text-sm mt-1">{errors.name}</p>
@@ -138,7 +164,10 @@ const DestinationForm = ({
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-gray-700 mb-1">
+        <label
+          htmlFor="description"
+          className="block text-gray-700 font-medium mb-2"
+        >
           Description
         </label>
         <textarea
@@ -146,89 +175,105 @@ const DestinationForm = ({
           name="description"
           value={formData.description}
           onChange={handleChange}
+          placeholder="Describe this destination"
           rows="4"
-          className={`w-full p-2 border rounded ${
-            errors.description ? "border-red-500" : "border-gray-300"
-          }`}
+          className={inputClass("description")}
         ></textarea>
         {errors.description && (
           <p className="text-red-500 text-sm mt-1">{errors.description}</p>
         )}
       </div>
 
-      <div>
-        <label htmlFor="price" className="block text-gray-700 mb-1">
-          Price ($)
-        </label>
-        <input
-          type="number"
-          id="price"
-          name="price"
-          value={formData.price}
-          onChange={handleChange}
-          step="0.01"
-          className={`w-full p-2 border rounded ${
-            errors.price ? "border-red-500" : "border-gray-300"
-          }`}
-        />
-        {errors.price && (
-          <p className="text-red-500 text-sm mt-1">{errors.price}</p>
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor="price"
+            className="block text-gray-700 font-medium mb-2"
+          >
+            Price ($)
+          </label>
+          <input
+            type="number"
+            id="price"
+            name="price"
+            value={formData.price}
+            onChange={handleChange}
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            className={inputClass("price")}
+          />
+          {errors.price && (
+            <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="duration"
+            className="block text-gray-700 font-medium mb-2"
+          >
+            Duration (days)
+          </label>
+          <input
+            type="number"
+            id="duration"
+            name="duration"
+            value={formData.duration}
+            onChange={handleChange}
+            min="1"
+            placeholder="0"
+            className={inputClass("duration")}
+          />
+          {errors.duration && (
+            <p className="text-red-500 text-sm mt-1">{errors.duration}</p>
+          )}
+        </div>
       </div>
 
       <div>
-        <label htmlFor="duration" className="block text-gray-700 mb-1">
-          Duration (days)
+        <label htmlFor="image" className="block text-gray-700 font-medium mb-2">
+          Destination Image
         </label>
-        <input
-          type="number"
-          id="duration"
-          name="duration"
-          value={formData.duration}
-          onChange={handleChange}
-          className={`w-full p-2 border rounded ${
-            errors.duration ? "border-red-500" : "border-gray-300"
-          }`}
-        />
-        {errors.duration && (
-          <p className="text-red-500 text-sm mt-1">{errors.duration}</p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="image" className="block text-gray-700 mb-1">
-          Image
-        </label>
-        <input
-          type="file"
-          id="image"
-          name="image"
-          ref={fileInputRef}
-          onChange={handleImageChange}
-          accept="image/*"
-          className={`w-full p-2 border rounded ${
-            errors.image ? "border-red-500" : "border-gray-300"
-          }`}
-        />
-        {errors.image && (
-          <p className="text-red-500 text-sm mt-1">{errors.image}</p>
-        )}
-
-        {/* Image preview */}
-        {imagePreview && (
-          <div className="mt-2">
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="h-32 object-cover rounded border border-gray-300"
-            />
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="w-full">
+            <div className="relative">
+              <input
+                type="file"
+                id="image"
+                name="image"
+                ref={fileInputRef}
+                onChange={handleImageChange}
+                accept="image/*"
+                className={`w-full p-3 border rounded-lg ${
+                  errors.image ? "border-red-500" : "border-gray-300"
+                } file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium
+                file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100`}
+              />
+            </div>
+            {errors.image && (
+              <p className="text-red-500 text-sm mt-1">{errors.image}</p>
+            )}
           </div>
-        )}
+
+          {/* Image preview */}
+          {imagePreview && (
+            <div className="mt-2 md:mt-0 w-full md:w-1/3">
+              <div className="aspect-video relative rounded-lg overflow-hidden border border-gray-300">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <button
         type="submit"
-        className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+        className="w-full md:w-auto bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
       >
         {buttonText}
       </button>
