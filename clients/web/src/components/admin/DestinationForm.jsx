@@ -86,6 +86,7 @@ const DestinationForm = ({
   };
 
   const handleSubmit = async (e) => {
+    console.log("aazazaza", formData);
     e.preventDefault();
 
     if (validate()) {
@@ -95,19 +96,18 @@ const DestinationForm = ({
       // Add text fields
       formDataToSubmit.append("name", formData.name);
       formDataToSubmit.append("description", formData.description);
-      formDataToSubmit.append("price", Number(formData.price));
-      formDataToSubmit.append("duration", Number(formData.duration));
+      formDataToSubmit.append("price", formData.price.toString());
+      formDataToSubmit.append("duration", formData.duration.toString());
 
       // Add image file if a new one was selected
       if (imageFile) {
         formDataToSubmit.append("image", imageFile);
       } else if (initialData.image) {
-        // Si nous éditons et qu'aucune nouvelle image n'a été sélectionnée,
-        // nous n'envoyons pas l'image existante car elle est déjà stockée
-        // Laissez Laravel ignorer ce champ et conserver l'image existante
       }
 
       // Call the onSubmit function with the FormData object
+      console.log("aazazaza", formData);
+      console.log("zzzzzzzzzzzzzzz", formDataToSubmit);
       onSubmit(formDataToSubmit);
     }
   };

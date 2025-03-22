@@ -19,8 +19,31 @@ export const createDestination = async (destinationData) => {
   return api.post("/destinations", destinationData);
 };
 
-export const updateDestination = async (id, destinationData) => {
-  return api.put(`/destinations/${id}`, destinationData);
+export const updateDestination = async (id, formData) => {
+  console.log("Contenu du FormData avant envoi:");
+  for (const [key, value] of formData.entries()) {
+    console.log(`${key}: ${value}`);
+  }
+
+  try {
+    const response = await api.post(`/destinations/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    console.log("Réponse reçue:", response.data);
+    return response;
+  } catch (error) {
+    console.error("Erreur détaillée:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+    });
+    throw error;
+  }
 };
 
 export const deleteDestination = async (id) => {

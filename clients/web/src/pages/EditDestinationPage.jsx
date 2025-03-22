@@ -33,6 +33,7 @@ const EditDestinationPage = () => {
 
   const handleSubmit = async (formData) => {
     try {
+      console.log("tayyyyyy", formData);
       await updateDestination(id, formData);
       navigate("/admin/destinations");
     } catch (err) {

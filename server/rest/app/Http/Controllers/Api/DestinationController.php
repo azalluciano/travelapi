@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateDestinationRequest;
 use App\Models\Destination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\JsonResponse;
 
 class DestinationController extends Controller
 {
@@ -78,47 +80,40 @@ class DestinationController extends Controller
         ]);
     }
 
+
     /**
      * Update the specified destination in storage.
      *
-     * @param  \App\Http\Requests\UpdateDestinationRequest  $request
-     * @param  \App\Models\Destination  $destination
-     * @return \Illuminate\Http\JsonResponse
+     * @param  UpdateDestinationRequest  $request
+     * @param  Destination  $destination
+     * @return JsonResponse
      */
-    public function update(UpdateDestinationRequest $request, Destination $destination)
+    public function update(Request $request, Destination $destination)
     {
-        // Récupérer toutes les données validées
-        $validatedData = $request->validated();
+        // Récupérer les données de base
+        $data = $request->except(['image', '_method']);
 
-        // Supprimer l'image des données car on va la traiter séparément
-        if (isset($validatedData['image'])) {
-            unset($validatedData['image']);
-        }
-
-        // Traiter l'image si elle est présente dans la requête
+        // Traitement de l'image (obligatoire)
         if ($request->hasFile('image')) {
+            // C'est une nouvelle image
             $image = $request->file('image');
-
-            // Stocker la nouvelle image dans le dossier public
             $filePath = $image->store('images/destinations', 'public');
+            $data['image'] = url(Storage::url($filePath));
 
-            // Créer l'URL complète de l'image avec la fonction url()
-            $validatedData['image'] = url(Storage::url($filePath));
-
-            // Supprimer l'ancienne image si elle existe
-            if ($destination->image) {
-                // Récupérer le chemin de stockage à partir de l'URL
-                $oldImageUrl = parse_url($destination->image, PHP_URL_PATH);
-                $oldImagePath = 'public' . str_replace('/storage', '', $oldImageUrl);
-
-                if (Storage::exists($oldImagePath)) {
-                    Storage::delete($oldImagePath);
+            // Suppression de l'ancienne image si nécessaire
+            if ($destination->image && !str_contains($destination->image, 'default-image.jpg')) {
+                $oldImagePath = str_replace(url('/storage/'), '', $destination->image);
+                if (Storage::disk('public')->exists($oldImagePath)) {
+                    Storage::disk('public')->delete($oldImagePath);
                 }
             }
+        } else {
+            // Pas de nouvelle image, on garde l'ancienne
+            $data['image'] = $destination->image;
         }
 
-        // Mettre à jour la destination avec les nouvelles données
-        $destination->update($validatedData);
+        // Mise à jour
+        $destination->update($data);
 
         return response()->json([
             'message' => 'Destination updated successfully',

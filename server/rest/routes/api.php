@@ -31,7 +31,7 @@ Route::get('/auth/me', [AuthController::class, 'me'])->middleware('auth:api');
 Route::middleware(['auth:api', 'admin'])->group(function () {
     // Destination management
     Route::post('/destinations', [DestinationController::class, 'store']);
-    Route::put('/destinations/{destination}', [DestinationController::class, 'update']);
+    Route::post('/destinations/{destination}', [DestinationController::class, 'update']);
     Route::delete('/destinations/{destination}', [DestinationController::class, 'destroy']);
 
     // Admin dashboard
