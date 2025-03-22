@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
-// Component for creating or updating destinations
+// Component for creating or updating destinations with image upload
 const DestinationForm = ({
   initialData = {},
   onSubmit,
@@ -11,9 +11,13 @@ const DestinationForm = ({
     description: initialData.description || "",
     price: initialData.price || "",
     duration: initialData.duration || "",
-    image: initialData.image || "",
   });
+
+  // Store the actual image file separately
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(initialData.image || "");
   const [errors, setErrors] = useState({});
+  const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -27,6 +31,25 @@ const DestinationForm = ({
         ...errors,
         [e.target.name]: null,
       });
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+
+      // Create a preview URL for the selected image
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+
+      // Clear error if there was one
+      if (errors.image) {
+        setErrors({
+          ...errors,
+          image: null,
+        });
+      }
     }
   };
 
@@ -53,31 +76,48 @@ const DestinationForm = ({
       newErrors.duration = "Duration must be a positive number";
     }
 
-    if (!formData.image.trim()) {
-      newErrors.image = "Image URL is required";
+    // Check if we have an image file or if an image URL already exists for edit mode
+    if (!imageFile && !initialData.image) {
+      newErrors.image = "Image is required";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (validate()) {
-      // Convert numeric fields to numbers
-      const formattedData = {
-        ...formData,
-        price: Number(formData.price),
-        duration: Number(formData.duration),
-      };
+      // Create a FormData object to send the file and other form data
+      const formDataToSubmit = new FormData();
 
-      onSubmit(formattedData);
+      // Add text fields
+      formDataToSubmit.append("name", formData.name);
+      formDataToSubmit.append("description", formData.description);
+      formDataToSubmit.append("price", Number(formData.price));
+      formDataToSubmit.append("duration", Number(formData.duration));
+
+      // Add image file if a new one was selected
+      if (imageFile) {
+        formDataToSubmit.append("image", imageFile);
+      } else if (initialData.image) {
+        // Si nous éditons et qu'aucune nouvelle image n'a été sélectionnée,
+        // nous n'envoyons pas l'image existante car elle est déjà stockée
+        // Laissez Laravel ignorer ce champ et conserver l'image existante
+      }
+
+      // Call the onSubmit function with the FormData object
+      onSubmit(formDataToSubmit);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      encType="multipart/form-data"
+    >
       <div>
         <label htmlFor="name" className="block text-gray-700 mb-1">
           Name
@@ -157,20 +197,32 @@ const DestinationForm = ({
 
       <div>
         <label htmlFor="image" className="block text-gray-700 mb-1">
-          Image URL
+          Image
         </label>
         <input
-          type="text"
+          type="file"
           id="image"
           name="image"
-          value={formData.image}
-          onChange={handleChange}
+          ref={fileInputRef}
+          onChange={handleImageChange}
+          accept="image/*"
           className={`w-full p-2 border rounded ${
             errors.image ? "border-red-500" : "border-gray-300"
           }`}
         />
         {errors.image && (
           <p className="text-red-500 text-sm mt-1">{errors.image}</p>
+        )}
+
+        {/* Image preview */}
+        {imagePreview && (
+          <div className="mt-2">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="h-32 object-cover rounded border border-gray-300"
+            />
+          </div>
         )}
       </div>
 

@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getDestination } from "../../services/destinationService";
 
+// Default image to be shown if there's no destination image
+const defaultImage =
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJlo0A1pmk9dewzQ5LBB36qnUnAHhPy3N1bg&s";
+
 // Component for displaying detailed information about a destination
 const DestinationDetail = () => {
   const { id } = useParams();
@@ -14,7 +18,7 @@ const DestinationDetail = () => {
       try {
         setLoading(true);
         const response = await getDestination(id);
-        setDestination(response.data);
+        setDestination(response.data.data);
         setError(null);
       } catch (err) {
         setError("Failed to load destination details");
@@ -48,13 +52,11 @@ const DestinationDetail = () => {
       </Link>
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        {/* Image with fallback to default if no image */}
         <img
-          src={destination.image}
+          src={destination.image || defaultImage}
           alt={destination.name}
           className="w-full h-64 object-cover"
-          onError={(e) => {
-            e.target.src = "https://via.placeholder.com/800x400?text=No+Image";
-          }}
         />
 
         <div className="p-6">

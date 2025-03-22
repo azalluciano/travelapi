@@ -17,7 +17,7 @@ const DestinationList = () => {
     try {
       setLoading(true);
       const response = await getDestinations(filters);
-      setDestinations(response.data);
+      setDestinations(response.data.data);
       setError(null);
     } catch (err) {
       setError("Failed to load destinations");

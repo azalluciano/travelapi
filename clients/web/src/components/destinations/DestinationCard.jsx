@@ -1,17 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+// Default image to be shown if there's no destination image
+const defaultImage =
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJlo0A1pmk9dewzQ5LBB36qnUnAHhPy3N1bg&s";
+
 // Component for displaying a destination card on the home page
 const DestinationCard = ({ destination }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      {/* Use the default image if no image is provided */}
       <img
-        src={destination.image}
+        src={destination.image || defaultImage}
         alt={destination.name}
         className="w-full h-48 object-cover"
-        onError={(e) => {
-          e.target.src = "https://via.placeholder.com/300x200?text=No+Image";
-        }}
       />
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-2">{destination.name}</h2>

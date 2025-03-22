@@ -41,30 +41,30 @@ class DestinationController extends Controller
      */
     public function store(StoreDestinationRequest $request)
     {
-        // Récupérer les données validées sans l'image
-        $validatedData = $request->except('image');
+        // Récupérer toutes les données validées
+        $validatedData = $request->validated();
 
-        // Traiter l'image
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-
-            // Stocker l'image
-            $image->storeAs('public/images/destinations', $imageName);
-
-            // Créer l'URL complète avec localhost
-            $validatedData['image'] = url('/storage/images/destinations/' . $imageName);
+        // Supprimer l'image des données car on va la traiter séparément
+        if (isset($validatedData['image'])) {
+            unset($validatedData['image']);
         }
 
-        // Créer la destination
-        $destination = Destination::create($validatedData);
+        // Traiter l'image si elle est présente
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $filePath = $image->store('images/destinations', 'public');
+            $validatedData['image'] = url(Storage::url($filePath));
+        } else {
+            // Si pas d'image, mettre une valeur par défaut
+            $validatedData['image'] = url('/default-image.jpg'); // Adaptez selon vos besoins
+        }
 
+        $destination = Destination::create($validatedData);
         return response()->json([
             'message' => 'Destination created successfully',
             'data' => $destination
         ], 201);
     }
-
     /**
      * Display the specified destination.
      *
@@ -87,31 +87,37 @@ class DestinationController extends Controller
      */
     public function update(UpdateDestinationRequest $request, Destination $destination)
     {
-        // Récupérer les données validées sans l'image
-        $validatedData = $request->except('image');
+        // Récupérer toutes les données validées
+        $validatedData = $request->validated();
+
+        // Supprimer l'image des données car on va la traiter séparément
+        if (isset($validatedData['image'])) {
+            unset($validatedData['image']);
+        }
 
         // Traiter l'image si elle est présente dans la requête
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
 
-            // Stocker la nouvelle image
-            $image->storeAs('public/images/destinations', $imageName);
+            // Stocker la nouvelle image dans le dossier public
+            $filePath = $image->store('images/destinations', 'public');
 
-            // Créer l'URL complète avec le domaine actuel
-            $validatedData['image'] = url('/storage/images/destinations/' . $imageName);
+            // Créer l'URL complète de l'image avec la fonction url()
+            $validatedData['image'] = url(Storage::url($filePath));
 
             // Supprimer l'ancienne image si elle existe
-            // Récupérer juste le nom du fichier depuis l'URL
             if ($destination->image) {
-                $oldImagePath = str_replace(url('/storage'), 'public', parse_url($destination->image, PHP_URL_PATH));
+                // Récupérer le chemin de stockage à partir de l'URL
+                $oldImageUrl = parse_url($destination->image, PHP_URL_PATH);
+                $oldImagePath = 'public' . str_replace('/storage', '', $oldImageUrl);
+
                 if (Storage::exists($oldImagePath)) {
                     Storage::delete($oldImagePath);
                 }
             }
         }
 
-        // Mettre à jour la destination
+        // Mettre à jour la destination avec les nouvelles données
         $destination->update($validatedData);
 
         return response()->json([

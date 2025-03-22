@@ -20,7 +20,7 @@ const AdminDestinationList = () => {
     try {
       setLoading(true);
       const response = await getDestinations();
-      setDestinations(response.data);
+      setDestinations(response.data.data);
       setError(null);
     } catch (err) {
       setError("Failed to load destinations");
@@ -64,7 +64,6 @@ const AdminDestinationList = () => {
           Add New Destination
         </Link>
       </div>
-
       {destinations.length === 0 ? (
         <p className="text-center py-8">No destinations found.</p>
       ) : (
@@ -72,6 +71,7 @@ const AdminDestinationList = () => {
           <table className="min-w-full bg-white border border-gray-200">
             <thead>
               <tr>
+                <th className="py-2 px-4 border-b text-left">Image</th>
                 <th className="py-2 px-4 border-b text-left">Name</th>
                 <th className="py-2 px-4 border-b text-left">Price</th>
                 <th className="py-2 px-4 border-b text-left">Duration</th>
@@ -81,6 +81,19 @@ const AdminDestinationList = () => {
             <tbody>
               {destinations.map((destination) => (
                 <tr key={destination.id}>
+                  <td className="py-2 px-4 border-b">
+                    {destination.image ? (
+                      <img
+                        src={destination.image}
+                        alt={destination.name}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                        <span className="text-gray-500 text-xs">No image</span>
+                      </div>
+                    )}
+                  </td>
                   <td className="py-2 px-4 border-b">{destination.name}</td>
                   <td className="py-2 px-4 border-b">${destination.price}</td>
                   <td className="py-2 px-4 border-b">
