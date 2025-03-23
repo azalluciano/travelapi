@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Routing\Controller;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -24,27 +25,18 @@ class AuthController extends Controller
     /**
      * Register a new admin user.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        $validator = $this->getRegistrationValidator($request);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'is_admin' => true, // Register as admin by default
-        ]);
+        $user = $this->createUser($request);
 
         return response()->json([
             'message' => 'Admin user successfully registered',
@@ -55,15 +47,12 @@ class AuthController extends Controller
     /**
      * Get a JWT via given credentials.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string|min:8',
-        ]);
+        $validator = $this->getLoginValidator($request);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -79,9 +68,9 @@ class AuthController extends Controller
     /**
      * Get the authenticated User.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function me()
+    public function me(): JsonResponse
     {
         return response()->json(Auth::user());
     }
@@ -89,9 +78,9 @@ class AuthController extends Controller
     /**
      * Log the user out (Invalidate the token).
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function logout()
+    public function logout(): JsonResponse
     {
         Auth::guard('api')->logout();
 
@@ -101,9 +90,9 @@ class AuthController extends Controller
     /**
      * Refresh a token.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function refresh()
+    public function refresh(): JsonResponse
     {
         return $this->respondWithToken(Auth::guard('api')->refresh());
     }
@@ -111,17 +100,61 @@ class AuthController extends Controller
     /**
      * Get the token array structure.
      *
-     * @param  string $token
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * @param string $token
+     * @return JsonResponse
      */
-    protected function respondWithToken($token)
+    protected function respondWithToken(string $token): JsonResponse
     {
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60,
+            'expires_in' => config('jwt.ttl') * 60,
             'user' => Auth::user()
+        ]);
+    }
+
+    /**
+     * Get validator for registration.
+     *
+     * @param Request $request
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
+    private function getRegistrationValidator(Request $request): \Illuminate\Contracts\Validation\Validator
+    {
+        return Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+    }
+
+    /**
+     * Get validator for login.
+     *
+     * @param Request $request
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
+    private function getLoginValidator(Request $request): \Illuminate\Contracts\Validation\Validator
+    {
+        return Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string|min:8',
+        ]);
+    }
+
+    /**
+     * Create a new user.
+     *
+     * @param Request $request
+     * @return User
+     */
+    private function createUser(Request $request): User
+    {
+        return User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'is_admin' => true, // Register as admin by default
         ]);
     }
 }

@@ -7,28 +7,25 @@ use App\Http\Requests\StoreDestinationRequest;
 use App\Http\Requests\UpdateDestinationRequest;
 use App\Models\Destination;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
 class DestinationController extends Controller
 {
     /**
      * Display a listing of the destinations.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $query = Destination::query();
 
-        // Filter by name if provided
         if ($request->has('name')) {
             $query->where('name', 'like', '%' . $request->name . '%');
         }
 
-        // Get destinations and convert to array
         $destinations = $query->get()->toArray();
 
         return response()->json([
@@ -36,85 +33,61 @@ class DestinationController extends Controller
         ]);
     }
 
-
     /**
      * Store a newly created destination in storage.
      *
-     * @param  \App\Http\Requests\StoreDestinationRequest  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param StoreDestinationRequest $request
+     * @return JsonResponse
      */
-    public function store(StoreDestinationRequest $request)
+    public function store(StoreDestinationRequest $request): JsonResponse
     {
-        // Récupérer toutes les données validées
         $validatedData = $request->validated();
 
-        // Supprimer l'image des données car on va la traiter séparément
+        // Remove image from data as we'll handle it separately
         if (isset($validatedData['image'])) {
             unset($validatedData['image']);
         }
 
-        // Traiter l'image si elle est présente
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $filePath = $image->store('images/destinations', 'public');
-            $validatedData['image'] = url(Storage::url($filePath));
-        } else {
-            // Si pas d'image, mettre une valeur par défaut
-            $validatedData['image'] = url('/default-image.jpg'); // Adaptez selon vos besoins
-        }
+        $validatedData['image'] = $this->handleImageUpload($request);
 
         $destination = Destination::create($validatedData);
+
         return response()->json([
             'message' => 'Destination created successfully',
             'data' => $destination
         ], 201);
     }
+
     /**
      * Display the specified destination.
      *
-     * @param  \App\Models\Destination  $destination
-     * @return \Illuminate\Http\JsonResponse
+     * @param Destination $destination
+     * @return JsonResponse
      */
-    public function show(Destination $destination)
+    public function show(Destination $destination): JsonResponse
     {
         return response()->json([
             'data' => $destination
         ]);
     }
 
-
     /**
      * Update the specified destination in storage.
      *
-     * @param  UpdateDestinationRequest  $request
-     * @param  Destination  $destination
+     * @param Request $request
+     * @param Destination $destination
      * @return JsonResponse
      */
-    public function update(Request $request, Destination $destination)
+    public function update(Request $request, Destination $destination): JsonResponse
     {
-        // Récupérer les données de base
         $data = $request->except(['image', '_method']);
 
-        // Traitement de l'image (obligatoire)
         if ($request->hasFile('image')) {
-            // C'est une nouvelle image
-            $image = $request->file('image');
-            $filePath = $image->store('images/destinations', 'public');
-            $data['image'] = url(Storage::url($filePath));
-
-            // Suppression de l'ancienne image si nécessaire
-            if ($destination->image && !str_contains($destination->image, 'default-image.jpg')) {
-                $oldImagePath = str_replace(url('/storage/'), '', $destination->image);
-                if (Storage::disk('public')->exists($oldImagePath)) {
-                    Storage::disk('public')->delete($oldImagePath);
-                }
-            }
+            $data['image'] = $this->handleImageUpload($request, $destination);
         } else {
-            // Pas de nouvelle image, on garde l'ancienne
             $data['image'] = $destination->image;
         }
 
-        // Mise à jour
         $destination->update($data);
 
         return response()->json([
@@ -122,18 +95,58 @@ class DestinationController extends Controller
             'data' => $destination
         ]);
     }
+
     /**
      * Remove the specified destination from storage.
      *
-     * @param  \App\Models\Destination  $destination
-     * @return \Illuminate\Http\JsonResponse
+     * @param Destination $destination
+     * @return JsonResponse
      */
-    public function destroy(Destination $destination)
+    public function destroy(Destination $destination): JsonResponse
     {
         $destination->delete();
 
         return response()->json([
             'message' => 'Destination deleted successfully'
         ]);
+    }
+
+    /**
+     * Handle image upload and storage.
+     *
+     * @param Request $request
+     * @param Destination|null $destination
+     * @return string
+     */
+    private function handleImageUpload(Request $request, ?Destination $destination = null): string
+    {
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $filePath = $image->store('images/destinations', 'public');
+
+            // Delete old image if updating an existing destination
+            if ($destination && $destination->image && !str_contains($destination->image, 'default-image.jpg')) {
+                $this->deleteOldImage($destination->image);
+            }
+
+            return url(Storage::url($filePath));
+        }
+
+        // If no image uploaded, use default or keep existing
+        return $destination ? $destination->image : url('/default-image.jpg');
+    }
+
+    /**
+     * Delete old image from storage.
+     *
+     * @param string $imageUrl
+     * @return void
+     */
+    private function deleteOldImage(string $imageUrl): void
+    {
+        $oldImagePath = str_replace(url('/storage/'), '', $imageUrl);
+        if (Storage::disk('public')->exists($oldImagePath)) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
     }
 }
