@@ -11,7 +11,7 @@ use App\Http\Controllers\Auth\AdminAuthController;
 */
 
 // Public routes
-// Route::get('/', [DestinationWebController::class, 'home'])->name('home');
+Route::get('/', [AdminAuthController::class, 'showLoginForm']);
 // Route::get('/destinations/{destination}', [DestinationWebController::class, 'details'])->name('destinations.details');
 
 // Authentication routes
