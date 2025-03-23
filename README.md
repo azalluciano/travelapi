@@ -21,4 +21,3 @@ Instructions
     Add automated tests if possible
     Record avideo of the project with the functionalities
 
-Contact me at mblitmanager[at]gmail.com in case of question.
