@@ -1,16 +1,16 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { isAuthenticated, logout } from "../../services/authService";
+import { Link } from "react-router-dom";
+// import { isAuthenticated, logout } from "../../services/authService";
 
 const Navbar = () => {
-  const navigate = useNavigate();
-  const authenticated = isAuthenticated();
+  // const navigate = useNavigate();
+  // const authenticated = isAuthenticated();
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
-  };
+  // const handleLogout = async () => {
+  //   await logout();
+  //   navigate("/login");
+  // };
 
   return (
     <nav className="bg-blue-600 border-b shadow-sm">
@@ -28,38 +28,6 @@ const Navbar = () => {
             >
               Home
             </Link>
-
-            {authenticated ? (
-              <>
-                <Link
-                  to="/admin/destinations"
-                  className="text-white hover:text-gray-900 transition-colors"
-                >
-                  Admin Dashboard
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-white hover:text-gray-900 transition-colors"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="text-white hover:text-gray-900 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="text-white hover:text-gray-900 transition-colors"
-                >
-                  Register
-                </Link>
-              </>
-            )}
           </div>
 
           {/* Menu mobile */}
@@ -95,41 +63,6 @@ const Navbar = () => {
             >
               Home
             </Link>
-
-            {authenticated ? (
-              <>
-                <Link
-                  to="/admin"
-                  onClick={() => setIsOpen(false)}
-                  className="block text-white hover:text-gray-900 p-2 transition-colors"
-                >
-                  Admin Dashboard
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block text-white hover:text-gray-900 p-2 transition-colors"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="block text-white hover:text-gray-900 p-2 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setIsOpen(false)}
-                  className="block text-white hover:text-gray-900 p-2 transition-colors"
-                >
-                  Register
-                </Link>
-              </>
-            )}
           </div>
         )}
       </div>

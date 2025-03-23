@@ -7,14 +7,15 @@ use App\Http\Middleware\AdminMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        api: __DIR__.'/../routes/api.php', // Utiliser le fichier api.php pour les routes API
-        commands: __DIR__.'/../routes/console.php',
+        api: __DIR__ . '/../routes/api.php', // Utiliser le fichier api.php pour les routes API
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Ajouter le middleware spécifique pour les routes API
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'auth' => \App\Http\Middleware\Authenticate::class,
         ]);
         // Vous pouvez ajouter d'autres middlewares ici selon vos besoins
     })

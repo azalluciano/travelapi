@@ -1,3 +1,4 @@
+
 # TRIP-API
 
 A Laravel-based REST API for managing travel destinations.
@@ -22,8 +23,8 @@ A Laravel-based REST API for managing travel destinations.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/trip-api.git
-   cd trip-api
+   git clone https://github.com/azalluciano/travelapi.git
+   cd travelapi
    ```
 
 2. Install dependencies:
@@ -41,7 +42,7 @@ A Laravel-based REST API for managing travel destinations.
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
    DB_PORT=3306
-   DB_DATABASE=trip_api
+   DB_DATABASE=tripapi
    DB_USERNAME=your_username
    DB_PASSWORD=your_password
    ```
@@ -169,6 +170,25 @@ A Laravel-based REST API for managing travel destinations.
 php artisan destinations:export [filename]
 ```
 This command calls the API to get all destinations and exports them to a CSV file.
+
+## Web Routes
+
+### Authentication Routes
+- **Login**: `GET /admin/login` (AdminAuthController@showLoginForm)
+- **Login POST**: `POST /admin/login` (AdminAuthController@login)
+- **Register**: `GET /admin/register` (AdminAuthController@showRegistrationForm)
+- **Register POST**: `POST /admin/register` (AdminAuthController@register)
+- **Logout**: `POST /admin/logout` (AdminAuthController@logout)
+
+### Admin Routes
+- **Destinations CRUD**: `Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () { Route::resource('destinations', DestinationWebController::class); });`
+
+### Fallback Route
+```php
+Route::fallback(function () {
+    return response()->view('errors.404', [], 404);
+});
+```
 
 ## Testing
 
