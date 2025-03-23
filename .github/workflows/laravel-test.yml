@@ -134,7 +134,21 @@ jobs:
               DB_PORT=3306
               DB_DATABASE=trip_api_test
               DB_USERNAME=root
-              DB_PASSWORD=password" > .env
+              DB_PASSWORD=password
+              
+              CACHE_DRIVER=array
+              SESSION_DRIVER=array" > .env
+            fi
+          else
+            # Make sure we're using array driver for cache and session in testing
+            sed -i "s/CACHE_DRIVER=.*/CACHE_DRIVER=array/" .env
+            sed -i "s/SESSION_DRIVER=.*/SESSION_DRIVER=array/" .env
+            # If the lines don't exist, add them
+            if ! grep -q "CACHE_DRIVER=" .env; then
+              echo "CACHE_DRIVER=array" >> .env
+            fi
+            if ! grep -q "SESSION_DRIVER=" .env; then
+              echo "SESSION_DRIVER=array" >> .env
             fi
           fi
 
@@ -142,6 +156,9 @@ jobs:
           php -r "echo 'APP_KEY=base64:'.base64_encode(random_bytes(32));" > .env.key
           cat .env.key >> .env
           rm .env.key
+
+          # Clear config cache safely without using database
+          php artisan config:clear
 
           # Check if JWT package is installed, then generate secret
           if grep -q "tymon/jwt-auth\|php-open-source-saver/jwt-auth" composer.json; then
@@ -155,8 +172,6 @@ jobs:
       - name: Prepare database
         working-directory: ${{ steps.find-laravel.outputs.laravel_root }}
         run: |
-          php artisan config:clear
-          php artisan cache:clear
           php artisan migrate:fresh --seed --force || echo "Migration failed, continuing anyway"
         env:
           DB_CONNECTION: mysql
@@ -183,3 +198,5 @@ jobs:
           DB_DATABASE: trip_api_test
           DB_USERNAME: root
           DB_PASSWORD: password
+          CACHE_DRIVER: array
+          SESSION_DRIVER: array
