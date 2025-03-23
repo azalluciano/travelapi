@@ -47,7 +47,7 @@ jobs:
           LARAVEL_ROOT="."
 
           # Check common directory names
-          for dir in api backend laravel src app www public_html; do
+          for dir in api backend laravel src app www public_html server/rest; do
             if [ -f "$dir/artisan" ]; then
               LARAVEL_ROOT="$dir"
               break
@@ -138,8 +138,10 @@ jobs:
             fi
           fi
 
-          # Generate app key
-          php artisan key:generate
+          # Force generate app key with base64 encoding
+          php -r "echo 'APP_KEY=base64:'.base64_encode(random_bytes(32));" > .env.key
+          cat .env.key >> .env
+          rm .env.key
 
           # Check if JWT package is installed, then generate secret
           if grep -q "tymon/jwt-auth\|php-open-source-saver/jwt-auth" composer.json; then
@@ -154,6 +156,7 @@ jobs:
         working-directory: ${{ steps.find-laravel.outputs.laravel_root }}
         run: |
           php artisan config:clear
+          php artisan cache:clear
           php artisan migrate:fresh --seed --force || echo "Migration failed, continuing anyway"
         env:
           DB_CONNECTION: mysql
@@ -168,11 +171,11 @@ jobs:
         run: |
           # Try vendor/bin/phpunit if available
           if [ -f "vendor/bin/phpunit" ]; then
-            vendor/bin/phpunit
+            XDEBUG_MODE=coverage vendor/bin/phpunit
+          else
+            # Try artisan test command
+            php artisan test || echo "No tests found or tests failed"
           fi
-
-          # Try artisan test command
-          php artisan test || echo "No tests found or tests failed"
         env:
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
